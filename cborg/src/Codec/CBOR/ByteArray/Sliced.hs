@@ -35,7 +35,9 @@ import Control.Monad.ST
 import System.IO.Unsafe
 
 import qualified Data.Primitive.ByteArray as Prim
+#if !MIN_VERSION_primitive(0,7,0)
 import           Data.Primitive.Types (Addr(..))
+#endif
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Unsafe as BS
 import qualified Data.ByteString.Short as BSS
@@ -66,8 +68,12 @@ toByteString sba =
     $ BS.unsafePackCStringFinalizer ptr (sizeofSlicedByteArray sba) (touch pinned)
   where
     pinned = toPinned sba
+#if MIN_VERSION_primitive(0,7,0)
+    !ptr = Prim.byteArrayContents pinned
+#else
     !(Addr addr#) = Prim.byteArrayContents pinned
     ptr = Ptr addr#
+#endif
 
 toPinned :: SlicedByteArray -> Prim.ByteArray
 toPinned (SBA ba off len)
